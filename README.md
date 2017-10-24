@@ -1,4 +1,4 @@
-#### Note: this fork adds support for adding a caption on a selected image.
+#### Note: this fork adds support for adding a caption on a selected image, but doesn't handle moving the screen when keyboard appears / disappears.
 
 
 # ALCameraViewController
