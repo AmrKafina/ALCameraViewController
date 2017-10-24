@@ -31,7 +31,7 @@ class ViewController: UIViewController {
     }
     
     @IBAction func openCamera(_ sender: Any) {
-        let cameraViewController = CameraViewController(croppingParameters: croppingParameters, allowsLibraryAccess: libraryEnabled) { [weak self] image, asset in
+        let cameraViewController = CameraViewController(croppingParameters: croppingParameters, allowsLibraryAccess: libraryEnabled) { [weak self] image, asset, caption in
             self?.imageView.image = image
             self?.dismiss(animated: true, completion: nil)
         }
@@ -40,7 +40,7 @@ class ViewController: UIViewController {
     }
     
     @IBAction func openLibrary(_ sender: Any) {
-        let libraryViewController = CameraViewController.imagePickerViewController(croppingParameters: croppingParameters) { [weak self] image, asset in
+        let libraryViewController = CameraViewController.imagePickerViewController(croppingParameters: croppingParameters) { [weak self] image, asset, caption in
             self?.imageView.image = image
             self?.dismiss(animated: true, completion: nil)
         }

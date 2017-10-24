@@ -9,15 +9,16 @@
 import UIKit
 import Photos
 
-public class ConfirmViewController: UIViewController, UIScrollViewDelegate {
+public class ConfirmViewController: UIViewController, UIScrollViewDelegate, UITextFieldDelegate {
 	
 	let imageView = UIImageView()
 	@IBOutlet weak var scrollView: UIScrollView!
 	@IBOutlet weak var cropOverlay: CropOverlay!
 	@IBOutlet weak var cancelButton: UIButton!
 	@IBOutlet weak var confirmButton: UIButton!
+  @IBOutlet weak var captionTextField: UITextField! // TODO: KEYBOARD APPEARING SHOULD TRANSFORM VIEW UP!
 	@IBOutlet weak var centeringView: UIView!
-	
+  
     var croppingParameters: CroppingParameters {
         didSet {
             cropOverlay.isResizable = croppingParameters.allowResizing
@@ -32,11 +33,13 @@ public class ConfirmViewController: UIViewController, UIScrollViewDelegate {
 
 	let asset: PHAsset?
 	let image: UIImage?
+  let caption: String!
 	
 	public init(image: UIImage, croppingParameters: CroppingParameters) {
 		self.croppingParameters = croppingParameters
 		self.asset = nil
 		self.image = image
+    self.caption = nil
 		super.init(nibName: "ConfirmViewController", bundle: CameraGlobals.shared.bundle)
 	}
 	
@@ -44,6 +47,7 @@ public class ConfirmViewController: UIViewController, UIScrollViewDelegate {
 		self.croppingParameters = croppingParameters
 		self.asset = asset
 		self.image = nil
+    self.caption = nil
 		super.init(nibName: "ConfirmViewController", bundle: CameraGlobals.shared.bundle)
 	}
 	
@@ -51,19 +55,29 @@ public class ConfirmViewController: UIViewController, UIScrollViewDelegate {
         fatalError("init(coder:) has not been implemented")
 	}
 	
-	public override var prefersStatusBarHidden: Bool {
-		return true
-	}
-	
-	public override var preferredStatusBarUpdateAnimation: UIStatusBarAnimation {
-		return UIStatusBarAnimation.slide
-	}
-	
+  open override var prefersStatusBarHidden: Bool {
+    return true
+  }
+  
+  open override var preferredStatusBarUpdateAnimation: UIStatusBarAnimation {
+    return UIStatusBarAnimation.slide
+  }
+  
+  public override var preferredStatusBarStyle: UIStatusBarStyle {
+    return UIStatusBarStyle.lightContent
+  }
+  
 	public override func viewDidLoad() {
 		super.viewDidLoad()
 
 		view.backgroundColor = UIColor.black
 		
+    // handles moving view when keyboard appears and dismissing keyboard when done
+    captionTextField.delegate = self
+    NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name:NSNotification.Name.UIKeyboardWillShow, object: nil)
+    NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name:NSNotification.Name.UIKeyboardWillHide, object: nil)
+    self.view.addGestureRecognizer(UITapGestureRecognizer(target: self.view, action: #selector(UIView.endEditing(_:))))
+    
 		scrollView.addSubview(imageView)
 		scrollView.delegate = self
 		scrollView.maximumZoomScale = 1
@@ -145,6 +159,23 @@ public class ConfirmViewController: UIViewController, UIScrollViewDelegate {
 			}, completion: nil)
 	}
 	
+  @objc func keyboardWillShow(notification: NSNotification) {
+    if let keyboardFrame: NSValue = notification.userInfo?[UIKeyboardFrameEndUserInfoKey] as? NSValue {
+      let keyboardRectangle = keyboardFrame.cgRectValue
+      let keyboardHeight = keyboardRectangle.height
+      self.view.transform = CGAffineTransform(translationX: 0, y: -1 * keyboardHeight)
+    }
+  }
+  
+  @objc func keyboardWillHide(notification: NSNotification) {
+    self.view.transform = CGAffineTransform(translationX: 0, y: 0)
+  }
+  
+  public func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+    textField.resignFirstResponder()
+    return true
+  }
+  
 	private func configureWithImage(_ image: UIImage) {
 		cropOverlay.isHidden = !croppingParameters.isEnabled
 		
@@ -221,7 +252,7 @@ public class ConfirmViewController: UIViewController, UIScrollViewDelegate {
 	}
 	
 	internal func cancel() {
-		onComplete?(nil, nil)
+		onComplete?(nil, nil, nil)
 	}
 	
 	internal func confirmPhoto() {
@@ -236,10 +267,12 @@ public class ConfirmViewController: UIViewController, UIScrollViewDelegate {
 		
 		let spinner = showSpinner()
 		
+    let caption = captionTextField.text
+    
 		if let asset = asset {
 			var fetcher = SingleImageFetcher()
 				.onSuccess { [weak self] image in
-					self?.onComplete?(image, self?.asset)
+					self?.onComplete?(image, self?.asset, caption)
 					self?.hideSpinner(spinner)
 					self?.enable()
 				}
@@ -266,7 +299,7 @@ public class ConfirmViewController: UIViewController, UIScrollViewDelegate {
 				newImage = image.crop(rect: resizedCropRect)
 			}
 			
-			onComplete?(newImage, nil)
+			onComplete?(newImage, nil, caption)
 			hideSpinner(spinner)
 			enable()
 		}
@@ -329,7 +362,6 @@ public class ConfirmViewController: UIViewController, UIScrollViewDelegate {
 		
 		return CGRect(x: normalizedX, y: normalizedY, width: normalizedWidth, height: normalizedHeight)
 	}
-	
 }
 
 extension UIImage {
