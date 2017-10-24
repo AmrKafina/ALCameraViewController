@@ -1,3 +1,6 @@
+#### Note: this fork adds support for adding a caption on a selected image.
+
+
 # ALCameraViewController
 A camera view controller with custom image picker and image cropping.
 
