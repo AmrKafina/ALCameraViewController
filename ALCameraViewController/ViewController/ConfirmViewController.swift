@@ -72,10 +72,8 @@ public class ConfirmViewController: UIViewController, UIScrollViewDelegate, UITe
 
 		view.backgroundColor = UIColor.black
 		
-    // handles moving view when keyboard appears and dismissing keyboard when done
+    // handles dismissing the keyboard when editing is done
     captionTextField.delegate = self
-    NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name:NSNotification.Name.UIKeyboardWillShow, object: nil)
-    NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name:NSNotification.Name.UIKeyboardWillHide, object: nil)
     self.view.addGestureRecognizer(UITapGestureRecognizer(target: self.view, action: #selector(UIView.endEditing(_:))))
     
 		scrollView.addSubview(imageView)
@@ -158,18 +156,6 @@ public class ConfirmViewController: UIViewController, UIScrollViewDelegate, UITe
 			self?.centerImageViewOnRotate()
 			}, completion: nil)
 	}
-	
-  @objc func keyboardWillShow(notification: NSNotification) {
-    if let keyboardFrame: NSValue = notification.userInfo?[UIKeyboardFrameEndUserInfoKey] as? NSValue {
-      let keyboardRectangle = keyboardFrame.cgRectValue
-      let keyboardHeight = keyboardRectangle.height
-      self.view.transform = CGAffineTransform(translationX: 0, y: -1 * keyboardHeight)
-    }
-  }
-  
-  @objc func keyboardWillHide(notification: NSNotification) {
-    self.view.transform = CGAffineTransform(translationX: 0, y: 0)
-  }
   
   public func textFieldShouldReturn(_ textField: UITextField) -> Bool {
     textField.resignFirstResponder()
